@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Improv Rotations</title>
+<style>
+  :root {
+    --bg: #111111;
+    --surface: #1e1e1e;
+    --surface2: #282828;
+    --border: #3a3a3a;
+    --accent: #c8a96e;
+    --accent2: #7eb8c8;
+    --text: #eeeeee;
+    --muted: #888;
+    --danger: #c87e7e;
+    --success: #7ec88e;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; font-size: 16px; min-height: 100vh; }
+
+  /* ── Header ── */
+  .app-header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 13px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header h1 {
+    font-size: 1.25rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .app-header .subtitle {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-style: italic;
+    white-space: nowrap;
+  }
+  .roster-toggle {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    font-family: 'Georgia', serif;
+    font-size: 0.78rem;
+    padding: 6px 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .roster-toggle:hover, .roster-toggle.open { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Roster Panel ── */
+  .roster-panel {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 0 16px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.25s ease, padding 0.25s ease;
+  }
+  .roster-panel.open { max-height: 600px; padding: 16px; }
+
+  .count-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .count-row label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .count-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 34px;
+    height: 34px;
+    border-radius: 4px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s;
+  }
+  .count-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .count-display {
+    font-size: 1.2rem;
+    color: var(--accent);
+    width: 22px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .name-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .name-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Georgia', serif;
+    font-size: 1rem;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .name-input:focus { border-color: var(--accent); }
+  .name-input::placeholder { color: var(--border); }
+
+  .generate-btn {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #1a1a1a;
+    font-family: 'Georgia', serif;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 13px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: opacity 0.15s;
+  }
+  .generate-btn:hover { opacity: 0.85; }
+  .generate-btn:active { opacity: 0.7; }
+
+  /* ── Sections ── */
+  .sections-wrap { padding-bottom: 60px; }
+
+  .section-header {
+    position: sticky;
+    top: 56px; /* header height */
+    z-index: 50;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    border-top: 2px solid var(--accent2);
+    padding: 9px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title {
+    font-size: 0.82rem;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: bold;
+    flex: 1;
+  }
+  .section-progress {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .section-progress.all-done { color: var(--success); }
+  .sec-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    font-family: 'Georgia', serif;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .sec-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Game Rows ── */
+  .game-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #222;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s, opacity 0.2s;
+    gap: 12px;
+    min-height: 52px;
+    border-left: 3px solid transparent;
+  }
+  .game-row:active { background: var(--surface2); }
+
+  .game-row.is-active {
+    border-left-color: var(--accent);
+    background: rgba(200, 169, 110, 0.05);
+  }
+  .game-row.is-done {
+    opacity: 0.18;
+  }
+
+  .game-pip {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: background 0.15s;
+  }
+  .game-row.is-active .game-pip { background: var(--accent); box-shadow: 0 0 6px rgba(200,169,110,0.5); }
+  .game-row.is-done .game-pip { background: #444; }
+
+  .game-names {
+    flex: 1;
+    font-size: 1rem;
+    line-height: 1.4;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+  .game-row.is-active .game-names { color: var(--accent); }
+
+  .game-seq {
+    font-size: 0.7rem;
+    color: var(--border);
+    flex-shrink: 0;
+    font-style: italic;
+  }
+  .game-row.is-done .game-seq { color: #2a2a2a; }
+
+  .game-check {
+    font-size: 0.85rem;
+    color: transparent;
+    flex-shrink: 0;
+    width: 16px;
+    text-align: center;
+  }
+  .game-row.is-done .game-check { color: #444; }
+
+  /* ── Empty state ── */
+  .empty-state {
+    padding: 52px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+  }
+  .empty-state strong { display: block; font-size: 1.1rem; color: var(--accent); margin-bottom: 10px; font-style: normal; }
+
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div>
+    <h1>Projectile</h1>
+    <div class="subtitle">Improv Rotations</div>
+  </div>
+  <button class="roster-toggle open" id="rosterToggle" onclick="toggleRoster()">▲ Roster</button>
+</div>
+
+<div class="roster-panel open" id="rosterPanel">
+  <div class="count-row">
+    <label>Actors</label>
+    <button class="count-btn" onclick="changeCount(-1)">−</button>
+    <span class="count-display" id="countDisplay">5</span>
+    <button class="count-btn" onclick="changeCount(1)">+</button>
+  </div>
+  <div class="name-grid" id="nameGrid"></div>
+  <button class="generate-btn" onclick="generate()">Build Rotations →</button>
+</div>
+
+<div class="sections-wrap" id="sectionsWrap">
+  <div class="empty-state">
+    <strong>Ready to run.</strong>
+    Enter your actors above and tap Build Rotations.
+  </div>
+</div>
+
+<script>
+let actorCount = 5;
+let sections = {}; // k → [{combo, done}]
+
+// ── Roster toggle ──
+function toggleRoster() {
+  const panel = document.getElementById('rosterPanel');
+  const btn   = document.getElementById('rosterToggle');
+  const isOpen = panel.classList.toggle('open');
+  btn.textContent = isOpen ? '▲ Roster' : '▼ Roster';
+  btn.classList.toggle('open', isOpen);
+}
+
+// ── Actor count ──
+function changeCount(d) {
+  actorCount = Math.max(2, Math.min(10, actorCount + d));
+  document.getElementById('countDisplay').textContent = actorCount;
+  buildNameGrid();
+}
+
+function buildNameGrid() {
+  const grid = document.getElementById('nameGrid');
+  const existing = Array.from(grid.querySelectorAll('input')).map(i => i.value);
+  grid.innerHTML = '';
+  for (let i = 0; i < actorCount; i++) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'name-input';
+    inp.placeholder = 'Actor ' + (i + 1);
+    inp.value = existing[i] || '';
+    grid.appendChild(inp);
+  }
+}
+
+function getNames() {
+  return Array.from(document.getElementById('nameGrid').querySelectorAll('input'))
+    .map(i => i.value.trim()).filter(v => v.length > 0);
+}
+
+// ── Combinatorics ──
+function getCombinations(arr, k) {
+  const out = [];
+  function r(start, cur) {
+    if (cur.length === k) { out.push([...cur]); return; }
+    for (let i = start; i < arr.length; i++) { cur.push(arr[i]); r(i+1, cur); cur.pop(); }
+  }
+  r(0, []);
+  return out;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Greedy ordering: minimize actor overlap with previous game
+function orderCombos(combos) {
+  if (!combos.length) return [];
+  const pool = shuffle(combos);
+  const ordered = [pool.shift()];
+  while (pool.length) {
+    const last = ordered[ordered.length - 1];
+    let minOv = Infinity;
+    pool.forEach(c => {
+      const ov = c.filter(a => last.includes(a)).length;
+      if (ov < minOv) minOv = ov;
+    });
+    const tied = pool.filter(c => c.filter(a => last.includes(a)).length === minOv);
+    const pick = tied[Math.floor(Math.random() * tied.length)];
+    pool.splice(pool.indexOf(pick), 1);
+    ordered.push(pick);
+  }
+  return ordered;
+}
+
+// ── Generate ──
+function generate() {
+  const names = getNames();
+  if (names.length < 2) { alert('Enter at least 2 actor names.'); return; }
+
+  sections = {};
+  [2, 3, 4].forEach(k => {
+    if (names.length < k) return;
+    const combos = orderCombos(getCombinations(names, k));
+    sections[k] = combos.map(combo => ({ combo, done: false }));
+  });
+
+  // Collapse roster
+  const panel = document.getElementById('rosterPanel');
+  const btn   = document.getElementById('rosterToggle');
+  panel.classList.remove('open');
+  btn.textContent = '▼ Roster';
+  btn.classList.remove('open');
+
+  renderAll();
+}
+
+// ── Render ──
+function renderAll() {
+  const wrap = document.getElementById('sectionsWrap');
+  wrap.innerHTML = '';
+  Object.keys(sections).forEach(k => wrap.appendChild(buildSection(parseInt(k))));
+}
+
+function buildSection(k) {
+  const data = sections[k];
+  const frag = document.createElement('div');
+  frag.id = 'section-' + k;
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className = 'section-header';
+
+  const doneCount = data.filter(g => g.done).length;
+  const allDone = doneCount === data.length;
+
+  hdr.innerHTML =
+    '<span class="section-title">' + k + '-Person</span>' +
+    '<span class="section-progress' + (allDone ? ' all-done' : '') + '" id="prog-' + k + '">' +
+      doneCount + ' / ' + data.length +
+    '</span>' +
+    '<button class="sec-btn" onclick="reshuffleSection(' + k + ')">Reshuffle</button>' +
+    '<button class="sec-btn" onclick="resetSection(' + k + ')">Reset</button>';
+  frag.appendChild(hdr);
+
+  // Rows
+  const list = document.createElement('div');
+  list.id = 'list-' + k;
+  const activeIdx = data.findIndex(g => !g.done);
+  data.forEach((game, idx) => list.appendChild(buildRow(k, idx, game, idx === activeIdx)));
+  frag.appendChild(list);
+
+  return frag;
+}
+
+function buildRow(k, idx, game, isActive) {
+  const row = document.createElement('div');
+  row.className = 'game-row' + (game.done ? ' is-done' : isActive ? ' is-active' : '');
+  row.onclick = () => toggleDone(k, idx);
+
+  // Sequence number (only visible when not done)
+  const seq = String(idx + 1).padStart(2, ' ');
+
+  row.innerHTML =
+    '<div class="game-pip"></div>' +
+    '<div class="game-names">' + game.combo.join(' · ') + '</div>' +
+    '<div class="game-seq">' + (idx + 1) + '</div>' +
+    '<div class="game-check">✓</div>';
+  return row;
+}
+
+function toggleDone(k, idx) {
+  sections[k][idx].done = !sections[k][idx].done;
+  refreshSection(k);
+}
+
+function refreshSection(k) {
+  const data = sections[k];
+  const list = document.getElementById('list-' + k);
+  if (!list) return;
+  list.innerHTML = '';
+  const activeIdx = data.findIndex(g => !g.done);
+  data.forEach((game, idx) => list.appendChild(buildRow(k, idx, game, idx === activeIdx)));
+
+  const doneCount = data.filter(g => g.done).length;
+  const allDone = doneCount === data.length;
+  const prog = document.getElementById('prog-' + k);
+  if (prog) {
+    prog.textContent = doneCount + ' / ' + data.length;
+    prog.className = 'section-progress' + (allDone ? ' all-done' : '');
+  }
+}
+
+function reshuffleSection(k) {
+  // Keep done in place, reshuffle undone tail
+  const done   = sections[k].filter(g => g.done);
+  const undone = sections[k].filter(g => !g.done).map(g => g.combo);
+  sections[k]  = [...done, ...orderCombos(undone).map(combo => ({ combo, done: false }))];
+  refreshSection(k);
+}
+
+function resetSection(k) {
+  sections[k].forEach(g => g.done = false);
+  refreshSection(k);
+}
+
+// Boot
+buildNameGrid();
+</script>
+</body>
+</html>
